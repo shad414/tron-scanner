@@ -25,10 +25,14 @@
     <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
         <a href="{{ route('scan') }}" class="font-extrabold text-base">🔍 پشکنەری TRON</a>
         <a href="{{ route('scan') }}" class="hover:text-red-300 {{ request()->routeIs('scan') ? 'text-red-300' : '' }}">پشکنین</a>
-        <a href="{{ route('history') }}" class="hover:text-red-300 {{ request()->routeIs('history*') ? 'text-red-300' : '' }}">مێژووی سکان</a>
-        <a href="{{ route('watches') }}" class="hover:text-red-300 {{ request()->routeIs('watches') ? 'text-red-300' : '' }}">چاودێری (Telegram)</a>
-        @if (config('services.tron.password') && session('scanner_ok'))
+        @if (\App\Http\Middleware\RequireAdmin::isAdmin(request()))
+            <a href="{{ route('history') }}" class="hover:text-red-300 {{ request()->routeIs('history*') ? 'text-red-300' : '' }}">مێژووی سکان</a>
+            <a href="{{ route('watches') }}" class="hover:text-red-300 {{ request()->routeIs('watches') ? 'text-red-300' : '' }}">چاودێری (Telegram)</a>
+        @endif
+        @if (session('scanner_ok'))
             <form method="post" action="{{ route('logout') }}" class="mr-auto">@csrf<button class="text-slate-400 hover:text-white">چوونەدەرەوە</button></form>
+        @elseif (config('services.tron.admin_password'))
+            <a href="{{ route('login', ['admin' => 1]) }}" class="mr-auto text-slate-500 hover:text-white text-xs">🔑 بەڕێوەبەر</a>
         @endif
     </div>
 </nav>

@@ -6,28 +6,44 @@ use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
-    public function form()
+    public function form(Request $request)
     {
-        return config('services.tron.password') ? view('login') : redirect()->route('scan');
-    }
+        $admin = $request->boolean('admin') || $request->session()->get('scanner_ok');
 
-    public function login(Request $request)
-    {
-        $password = (string) config('services.tron.password');
-        if ($password !== '' && hash_equals($password, (string) $request->input('password'))) {
-            $request->session()->regenerate();
-            $request->session()->put('scanner_ok', true);
-
-            return redirect()->intended(route('scan'));
+        if (! config('services.tron.password') && ! config('services.tron.admin_password')) {
+            return redirect()->route('scan');
         }
 
-        return back()->withErrors(['password' => 'وشەی نهێنی هەڵەیە.']);
+        return view('login', ['admin' => $admin || ! config('services.tron.password')]);
+    }
+
+    /** One form for both passwords: the admin password also opens the site. */
+    public function login(Request $request)
+    {
+        $given = (string) $request->input('password');
+        $site = (string) config('services.tron.password');
+        $admin = (string) config('services.tron.admin_password');
+
+        $isAdmin = $admin !== '' && hash_equals($admin, $given);
+        $isUser = $isAdmin || ($site !== '' && hash_equals($site, $given));
+
+        if (! $isUser) {
+            return back()->withErrors(['password' => 'وشەی نهێنی هەڵەیە.']);
+        }
+
+        $request->session()->regenerate();
+        $request->session()->put('scanner_ok', true);
+        if ($isAdmin) {
+            $request->session()->put('admin_ok', true);
+        }
+
+        return redirect()->intended(route('scan'));
     }
 
     public function logout(Request $request)
     {
         $request->session()->invalidate();
 
-        return redirect()->route('login');
+        return redirect()->route('scan');
     }
 }

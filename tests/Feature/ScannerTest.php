@@ -104,6 +104,20 @@ class ScannerTest extends TestCase
         $this->get('/history')->assertOk();
     }
 
+    public function test_admin_pages_need_admin_password_but_scanning_is_public(): void
+    {
+        config(['services.tron.admin_password' => 'boss']);
+
+        $this->get('/?address=Tbad')->assertOk();
+        $this->get('/history')->assertRedirect('/login?admin=1');
+        $this->get('/watches')->assertRedirect('/login?admin=1');
+        $this->post('/watches', ['address' => self::SELF, 'chat_id' => '123456'])->assertRedirect('/login?admin=1');
+        $this->assertSame(0, Watch::count());
+
+        $this->post('/login', ['password' => 'boss'])->assertRedirect();
+        $this->get('/history')->assertOk();
+    }
+
     public function test_watch_sends_telegram_alert_for_new_transfer(): void
     {
         config(['services.telegram.bot_token' => 'bot-token']);

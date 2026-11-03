@@ -31,6 +31,8 @@ return [
         'max_transfers' => env('TRON_MAX_TRANSFERS', 1000),
         // When set, the whole site asks for this password
         'password' => env('SCANNER_PASSWORD'),
+        // When set, history and Telegram watches need this password (set it on a public site)
+        'admin_password' => env('ADMIN_PASSWORD'),
     ],
 
     'telegram' => [

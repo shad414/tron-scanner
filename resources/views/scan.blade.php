@@ -55,9 +55,11 @@
         {{-- Toolbar: report + watch --}}
         <div class="no-print flex flex-wrap items-center gap-2 mb-5">
             <button type="button" onclick="window.print()" class="rounded-xl bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 text-sm font-semibold">🖨️ ڕاپۆرت / PDF</button>
-            @if ($scan)
+            @php $isAdmin = \App\Http\Middleware\RequireAdmin::isAdmin(request()); @endphp
+            @if ($scan && $isAdmin)
                 <a href="{{ route('history.show', $scan) }}" class="rounded-xl bg-white hover:bg-slate-50 border px-4 py-2 text-sm">🔗 بەستەری ئەم ڕاپۆرتە (#{{ $scan->id }})</a>
             @endif
+            @if ($isAdmin)
             <details class="relative">
                 <summary class="list-none cursor-pointer rounded-xl bg-white hover:bg-slate-50 border px-4 py-2 text-sm">
                     🔔 چاودێری بە Telegram @if ($watches->count()) <span class="text-emerald-600">({{ $watches->count() }} چالاکە)</span> @endif
@@ -75,6 +77,7 @@
                     <p class="text-xs text-slate-500">Chat ID ت لە <span class="mono">@userinfobot</span> وەربگرە. <a href="{{ route('watches') }}" class="text-blue-700 underline">ڕێکخستن</a></p>
                 </form>
             </details>
+            @endif
             @if ($scan && $scan->created_at->lt(now()->subMinutes(10)))
                 <span class="text-sm text-amber-700">ئەمە ڕاپۆرتێکی هەڵگیراوە لە {{ $scan->created_at->format('Y-m-d H:i') }} — <a class="underline" href="{{ route('scan', ['address' => $r['address']]) }}">سکانی نوێ</a></span>
             @endif

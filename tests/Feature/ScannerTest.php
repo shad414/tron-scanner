@@ -85,6 +85,19 @@ class ScannerTest extends TestCase
         $this->get('/?address=Tnotanaddress')->assertOk()->assertSee('ئادرەسێکی دروستی TRON نییە');
     }
 
+    /** TronGrid still rate-limiting after the retries must not read as an empty, clean wallet. */
+    public function test_rate_limited_trongrid_shows_an_error_not_clean(): void
+    {
+        config(['services.tron.trongrid_key' => null, 'services.tron.tronscan_key' => null]);
+        Http::fake(['api.trongrid.io/*' => Http::response(['Error' => 'rate limit'], 429)]);
+
+        $this->get('/?address='.self::SELF)->assertOk()
+            ->assertSee('پەیوەندی بە TronGrid ەوە نەکرا')
+            ->assertDontSee('پاکە');
+        $this->assertSame(0, Scan::count());
+        $this->assertFalse(cache()->has('tron-scan:'.self::SELF));
+    }
+
     public function test_scans_are_rate_limited_per_visitor(): void
     {
         for ($i = 0; $i < 10; $i++) {

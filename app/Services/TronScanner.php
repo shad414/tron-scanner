@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Pool;
 use App\Models\FlaggedAddress;
 use GuzzleHttp\Middleware;
@@ -233,6 +234,17 @@ class TronScanner
         }
     }
 
+    /**
+     * Still rate-limited (or down) after the retries: stop the scan instead of reporting an empty,
+     * "clean" address. Throwing inside Cache::remember also keeps the bad result out of the cache.
+     */
+    private function mustBeOk(Response $res): void
+    {
+        if (! $res->ok()) {
+            throw new ConnectionException('TronGrid answered '.$res->status());
+        }
+    }
+
     /** The warm-up response when it succeeded, otherwise a fresh (retrying) request. */
     private function fromPre(string $name, callable $fetch): Response
     {
@@ -260,9 +272,10 @@ class TronScanner
 
     private function account(string $address): ?array
     {
-        $data = $this->fromPre('account', fn () => $this->grid()->get("/v1/accounts/$address"))->json('data');
+        $res = $this->fromPre('account', fn () => $this->grid()->get("/v1/accounts/$address"));
+        $this->mustBeOk($res);
 
-        return $data[0] ?? null;
+        return $res->json('data')[0] ?? null;
     }
 
     private function trc20Transfers(string $address): array
@@ -277,6 +290,10 @@ class TronScanner
                 ? $this->grid()->get($url, $query)
                 : $this->fromPre('trc20', fn () => $this->grid()->get($url, $query));
             if (! $res->ok()) {
+                // a failed first page would read as "no transfers" and the address as clean
+                if (! isset($query['fingerprint'])) {
+                    $this->mustBeOk($res);
+                }
                 break;
             }
             foreach ($res->json('data', []) as $t) {
@@ -317,6 +334,7 @@ class TronScanner
     {
         $res = $this->fromPre('trx', fn () => $this->grid()
             ->get("/v1/accounts/$address/transactions", ['limit' => 200, 'only_confirmed' => 'true']));
+        $this->mustBeOk($res);
         $out = [];
         foreach ($res->json('data', []) ?? [] as $tx) {
             $c = $tx['raw_data']['contract'][0] ?? null;

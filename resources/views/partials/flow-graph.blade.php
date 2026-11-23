@@ -10,7 +10,7 @@
     $cy = $H / 2;
     $nodeW = 230;
     $volume = fn ($c, $dir) => $c[$dir.'_usd'] ?: 0;
-    $max = max(1, ...array_map(fn ($c) => $volume($c, 'in'), $senders), ...array_map(fn ($c) => $volume($c, 'out'), $receivers));
+    $max = max([1, ...array_map(fn ($c) => $volume($c, 'in'), $senders), ...array_map(fn ($c) => $volume($c, 'out'), $receivers)]);
     $stroke = fn ($v) => 1.5 + 12 * sqrt($v / $max);
     $y = fn ($i, $n) => $cy + ($i - ($n - 1) / 2) * $rowH;
     // counterparties that dirty money passed through (hop 2 of a taint path)

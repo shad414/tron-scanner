@@ -2,11 +2,12 @@
 @section('title', 'چاودێری Telegram')
 
 @section('content')
-    <h1 class="text-2xl font-extrabold mb-5">🔔 چاودێری ئادرەسەکان (Telegram)</h1>
+    <h1 class="text-2xl font-extrabold mb-1">🔔 چاودێری ئادرەسەکان</h1>
+    <p class="muted text-sm mb-5">هەر کاتێک پارە بێت یان بڕوات، لە Telegram ئاگادار دەکرێیتەوە.</p>
 
     @unless ($telegram)
-        <div class="rounded-xl bg-amber-50 border border-amber-300 text-amber-900 p-4 mb-5 text-sm leading-7">
-            <b>Telegram هێشتا ڕێک نەخراوە.</b><br>
+        <div class="card p-4 mb-4 text-sm leading-7" style="border-color: rgba(251,191,36,.4)">
+            <b class="c-warn">Telegram هێشتا ڕێک نەخراوە.</b><br>
             ١. لە Telegram بڕۆ بۆ <span class="mono">@BotFather</span>، فەرمانی <span class="mono">/newbot</span> بنێرە و token ەکە کۆپی بکە.<br>
             ٢. لە فایلی <span class="mono">.env</span> دایبنێ: <span class="mono">TELEGRAM_BOT_TOKEN=…</span><br>
             ٣. <span class="mono">/start</span> بۆ بۆتەکەت بنێرە، و Chat ID ی خۆت لە <span class="mono">@userinfobot</span> وەربگرە.<br>
@@ -14,47 +15,52 @@
         </div>
     @endunless
 
-    <div class="grid md:grid-cols-2 gap-4 mb-5">
-        <form method="post" action="{{ route('watches.store') }}" class="bg-white rounded-2xl shadow-sm p-5 space-y-3">
+    <details class="card sec" {{ $watches->isEmpty() || old('address') ? 'open' : '' }}>
+        <summary><span class="sec-icon">＋</span>زیادکردنی چاودێری<span class="chev">⌄</span></summary>
+        <form method="post" action="{{ route('watches.store') }}" class="body space-y-3">
             @csrf
-            <h2 class="font-bold">زیادکردنی چاودێری</h2>
-            <input name="address" required placeholder="ئادرەسی TRON (T…)" value="{{ old('address') }}" class="mono w-full rounded-lg border px-3 py-2">
-            <input name="chat_id" required inputmode="numeric" placeholder="Telegram Chat ID" value="{{ old('chat_id') }}" class="mono w-full rounded-lg border px-3 py-2">
-            <input name="label" maxlength="100" placeholder="ناو (ئارەزوومەندانە)" value="{{ old('label') }}" class="w-full rounded-lg border px-3 py-2">
-            <button class="w-full rounded-lg bg-red-600 hover:bg-red-700 text-white py-2 font-semibold">چاودێری بکە</button>
+            <input name="address" required placeholder="ئادرەسی TRON (T…)" value="{{ old('address') }}" class="field mono" spellcheck="false" autocapitalize="off">
+            <input name="chat_id" required inputmode="numeric" placeholder="Telegram Chat ID" value="{{ old('chat_id') }}" class="field mono">
+            <input name="label" maxlength="100" placeholder="ناو (ئارەزوومەندانە)" value="{{ old('label') }}" class="field">
+            <button class="btn btn-primary w-full">چاودێری بکە</button>
         </form>
+    </details>
 
-        <form method="post" action="{{ route('watches.test') }}" class="bg-white rounded-2xl shadow-sm p-5 space-y-3">
+    <details class="card sec">
+        <summary><span class="sec-icon">🧪</span>تاقیکردنەوەی Telegram<span class="chev">⌄</span></summary>
+        <form method="post" action="{{ route('watches.test') }}" class="body space-y-3">
             @csrf
-            <h2 class="font-bold">تاقیکردنەوەی Telegram</h2>
-            <p class="text-sm text-slate-500">نامەیەکی تاقیکردنەوە بۆ ئەم Chat ID یە دەنێرێت.</p>
-            <input name="chat_id" required inputmode="numeric" placeholder="Telegram Chat ID" class="mono w-full rounded-lg border px-3 py-2">
-            <button class="w-full rounded-lg bg-slate-800 hover:bg-slate-900 text-white py-2 font-semibold" @disabled(! $telegram)>ناردنی نامەی تاقیکردنەوە</button>
+            <p class="text-sm muted">نامەیەکی تاقیکردنەوە بۆ ئەم Chat ID یە دەنێرێت.</p>
+            <input name="chat_id" required inputmode="numeric" placeholder="Telegram Chat ID" class="field mono">
+            <button class="btn w-full" @disabled(! $telegram)>ناردنی نامەی تاقیکردنەوە</button>
         </form>
-    </div>
+    </details>
 
-    <div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
-        <table class="w-full text-sm whitespace-nowrap">
-            <thead class="text-slate-500 border-b"><tr><th class="text-right p-3">ئادرەس</th><th class="text-right">ناو</th><th class="text-right">Chat ID</th><th class="text-right">دوایین جووڵە</th><th class="text-right">بلاک‌لیست</th><th></th></tr></thead>
-            <tbody>
-            @forelse ($watches as $w)
-                <tr class="border-b last:border-0">
-                    <td class="p-3"><a href="{{ route('scan', ['address' => $w->address]) }}" class="mono text-blue-700 hover:underline">{{ $w->address }}</a></td>
-                    <td>{{ $w->label ?? '—' }}</td>
-                    <td class="mono">{{ $w->chat_id }}</td>
-                    <td>{{ $w->last_seen_ms ? date('Y-m-d H:i', intdiv($w->last_seen_ms, 1000)) : '—' }}</td>
-                    <td>{!! $w->was_blacklisted ? '<span class="text-red-600">⛔ بەڵێ</span>' : '<span class="text-emerald-600">نەخێر</span>' !!}</td>
-                    <td class="p-3">
-                        <form method="post" action="{{ route('watches.destroy', $w) }}" onsubmit="return confirm('لاببرێت؟')">
-                            @csrf @method('delete')
-                            <button class="text-red-600 hover:underline">لابردن</button>
-                        </form>
-                    </td>
-                </tr>
-            @empty
-                <tr><td colspan="6" class="p-6 text-center text-slate-400">هیچ ئادرەسێک چاودێری ناکرێت.</td></tr>
-            @endforelse
-            </tbody>
-        </table>
+    <h2 class="font-bold mt-6 mb-3">چاودێرییە چالاکەکان <span class="pill pill-mute">{{ $watches->count() }}</span></h2>
+    <div class="space-y-2.5">
+        @forelse ($watches as $w)
+            <div class="card p-3.5">
+                <div class="flex items-start gap-3">
+                    <a href="{{ route('scan', ['address' => $w->address]) }}" class="min-w-0 flex-1">
+                        <span class="font-bold block">{{ $w->label ?? 'بێ ناو' }}</span>
+                        <span class="mono block text-[12.5px] c-blue truncate text-left mt-0.5">{{ $w->address }}</span>
+                    </a>
+                    @if ($w->was_blacklisted)
+                        <span class="pill pill-bad">⛔ بلاک‌لیست</span>
+                    @else
+                        <span class="pill pill-ok">پاک</span>
+                    @endif
+                </div>
+                <div class="flex items-center justify-between gap-2 mt-3 pt-3 text-[12px] faint" style="border-top: 1px solid var(--line)">
+                    <span>Chat <span class="mono">{{ $w->chat_id }}</span> · دوایین جووڵە: <span class="mono">{{ $w->last_seen_ms ? date('Y-m-d H:i', intdiv($w->last_seen_ms, 1000)) : '—' }}</span></span>
+                    <form method="post" action="{{ route('watches.destroy', $w) }}" onsubmit="return confirm('لاببرێت؟')">
+                        @csrf @method('delete')
+                        <button class="btn btn-danger !py-1 !px-3 !text-[12px]">لابردن</button>
+                    </form>
+                </div>
+            </div>
+        @empty
+            <div class="card p-8 text-center muted">هیچ ئادرەسێک چاودێری ناکرێت.</div>
+        @endforelse
     </div>
 @endsection

@@ -2,36 +2,38 @@
 @section('title', 'مێژووی سکان')
 
 @section('content')
-    @php $badge = [['✅ پاک', 'bg-emerald-100 text-emerald-800'], ['⚠️ ئاگاداربە', 'bg-amber-100 text-amber-800'], ['⛔ پیس', 'bg-red-100 text-red-800']]; @endphp
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <h1 class="text-2xl font-extrabold">مێژووی سکان</h1>
-        <form method="get" class="flex gap-2">
-            <input name="q" value="{{ $q }}" placeholder="گەڕان بە ئادرەس…" class="mono rounded-xl border px-3 py-2">
-            <button class="rounded-xl bg-slate-800 text-white px-4">گەڕان</button>
-        </form>
-    </div>
+    @php $badge = [['✓ پاک', 'ok'], ['! ئاگاداربە', 'warn'], ['✕ پیس', 'bad']]; @endphp
+    <h1 class="text-2xl font-extrabold mb-4">مێژووی سکان</h1>
 
-    <div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
-        <table class="w-full text-sm whitespace-nowrap">
-            <thead class="text-slate-500 border-b">
-                <tr><th class="text-right p-3">#</th><th class="text-right">کات</th><th class="text-right">ئادرەس</th><th class="text-right">ئەنجام</th><th class="text-right">سەرچاوەی پیس</th><th class="text-right">USDT</th><th class="text-right">ئێکسچەینج</th></tr>
-            </thead>
-            <tbody>
-            @forelse ($scans as $s)
-                <tr class="border-b last:border-0 hover:bg-slate-50">
-                    <td class="p-3 text-slate-400">{{ $s->id }}</td>
-                    <td>{{ $s->created_at->format('Y-m-d H:i') }}</td>
-                    <td><a href="{{ route('history.show', $s) }}" class="mono text-blue-700 hover:underline">{{ $s->address }}</a></td>
-                    <td><span class="rounded px-2 py-0.5 text-xs {{ $badge[$s->risk_level][1] }}">{{ $badge[$s->risk_level][0] }}</span></td>
-                    <td class="mono {{ $s->taint_percent >= 10 ? 'text-red-600 font-bold' : ($s->taint_percent > 0 ? 'text-amber-600' : 'text-slate-400') }}">{{ rtrim(rtrim($s->taint_percent, '0'), '.') }}٪</td>
-                    <td class="mono">{{ number_format($s->usdt_balance, 2) }}</td>
-                    <td class="text-xs">{{ $s->exchanges ?? '—' }}</td>
-                </tr>
-            @empty
-                <tr><td colspan="7" class="p-6 text-center text-slate-400">هێشتا هیچ سکانێک نەکراوە.</td></tr>
-            @endforelse
-            </tbody>
-        </table>
+    <form method="get" class="card p-2 mb-4 flex gap-2">
+        <input name="q" value="{{ $q }}" placeholder="گەڕان بە ئادرەس…" class="field mono !border-0 !bg-transparent !shadow-none flex-1" spellcheck="false" autocapitalize="off" enterkeyhint="search">
+        <button class="btn btn-primary !px-5">گەڕان</button>
+    </form>
+
+    <div class="space-y-2.5">
+        @forelse ($scans as $s)
+            @php [$label, $tone] = $badge[$s->risk_level]; @endphp
+            <a href="{{ route('history.show', $s) }}" class="card flex items-center gap-3 p-3.5">
+                <span class="shrink-0 w-11 h-11 rounded-xl grid place-items-center font-extrabold" style="background: var(--{{ $tone }}-bg); color: var(--{{ $tone }})">{{ mb_substr($label, 0, 1) }}</span>
+                <span class="min-w-0 flex-1">
+                    <span class="mono block text-[13px] truncate text-left">{{ $s->address }}</span>
+                    <span class="flex flex-wrap items-center gap-1.5 mt-1">
+                        <span class="pill pill-{{ $tone }}">{{ $label }}</span>
+                        @if ($s->taint_percent > 0)
+                            <span class="pill {{ $s->taint_percent >= 10 ? 'pill-bad' : 'pill-warn' }}">پیس {{ rtrim(rtrim($s->taint_percent, '0'), '.') }}٪</span>
+                        @endif
+                        @if ($s->exchanges)<span class="pill pill-gold">🏦 {{ \Illuminate\Support\Str::limit($s->exchanges, 24) }}</span>@endif
+                    </span>
+                </span>
+                <span class="text-left shrink-0">
+                    <span class="mono block font-bold text-[14px]">{{ number_format($s->usdt_balance, 2) }}</span>
+                    <span class="block text-[11px] faint">USDT · #{{ $s->id }}</span>
+                    <span class="block text-[11px] faint mono">{{ $s->created_at->format('m-d H:i') }}</span>
+                </span>
+            </a>
+        @empty
+            <div class="card p-8 text-center muted">هێشتا هیچ سکانێک نەکراوە.</div>
+        @endforelse
     </div>
-    <div class="mt-4">{{ $scans->links() }}</div>
+    <div class="mt-5">{{ $scans->links() }}</div>
 @endsection

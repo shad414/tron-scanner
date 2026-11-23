@@ -2,13 +2,16 @@
 @section('title', 'چوونەژوورەوە')
 
 @section('content')
-    <form method="post" action="{{ url('/login') }}" class="max-w-sm mx-auto bg-white rounded-2xl shadow-sm p-6 space-y-4 mt-10">
+    <form method="post" action="{{ url('/login') }}" class="max-w-sm mx-auto card p-6 space-y-4 mt-8">
         @csrf
-        <h1 class="text-xl font-extrabold text-center">🔒 {{ $admin ? 'چوونەژوورەوەی بەڕێوەبەر' : 'چوونەژوورەوە' }}</h1>
-        @if ($admin)
-            <p class="text-sm text-slate-500 text-center">مێژووی سکان و چاودێری Telegram تەنها بۆ بەڕێوەبەرە.</p>
-        @endif
-        <input type="password" name="password" required autofocus placeholder="وشەی نهێنی" class="w-full rounded-lg border px-3 py-2">
-        <button class="w-full rounded-lg bg-red-600 hover:bg-red-700 text-white py-2 font-semibold">چوونەژوورەوە</button>
+        <div class="text-center">
+            <div class="logo-mark mx-auto !w-14 !h-14 !text-2xl !rounded-2xl mb-3">🔒</div>
+            <h1 class="text-xl font-extrabold">{{ $admin ? 'چوونەژوورەوەی بەڕێوەبەر' : 'چوونەژوورەوە' }}</h1>
+            @if ($admin)
+                <p class="text-sm muted mt-1">مێژووی سکان و چاودێری Telegram تەنها بۆ بەڕێوەبەرە.</p>
+            @endif
+        </div>
+        <input type="password" name="password" required autofocus placeholder="وشەی نهێنی" class="field" autocomplete="current-password">
+        <button class="btn btn-primary w-full !py-3.5">چوونەژوورەوە</button>
     </form>
 @endsection
